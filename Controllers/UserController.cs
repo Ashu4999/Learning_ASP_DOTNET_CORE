@@ -73,21 +73,19 @@ namespace Learning_Dotnet.Controllers
             {
                 return Ok();
             }
-            throw new Exception("Failed to add user");
+            throw new Exception("Failed to edit user");
         }
 
         [HttpDelete("{userId}")]
         public IActionResult DeleteUser([FromRoute] int userId)
         {
-            string sql = $"SELECT * FROM TutorialAppSchema.Users WHERE UserId = {userId}";
-            User foundUser = _dataContextDapper.LoadDataSingle<User>(sql);
-
-            if (foundUser == null)
-                return NotFound();
-
-            string deleteSql = $"DELETE FROM TutorialAppSchema.Users WHERE UserId = {userId};";
-            _dataContextDapper.ExecuteSql(deleteSql);
-            return Ok($"{userId} User Deleted");
+            string sql = $"DELETE FROM TutorialAppSchema.Users WHERE UserId = {userId}";
+            bool result = _dataContextDapper.ExecuteSql(sql);
+            if (result)
+            {
+                return Ok();
+            }
+            throw new Exception("Failed to delete user");
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Learning_Dotnet.Data;
 using Learning_Dotnet.Dtos;
 using Learning_Dotnet.Models;
@@ -16,9 +17,13 @@ namespace Learning_Dotnet.Controllers
     public class UserEFController : ControllerBase
     {
         private readonly DataContextEF _dataContextEF;
+        IMapper _mapper;
         public UserEFController(IConfiguration config)
         {
             _dataContextEF = new DataContextEF(config);
+            _mapper = new Mapper(new MapperConfiguration(cfg => {
+                cfg.CreateMap<UserAddDto, User>();
+            }));
         }
 
         [HttpGet]
@@ -50,13 +55,7 @@ namespace Learning_Dotnet.Controllers
         [HttpPost]
         public IActionResult AddUser(UserAddDto user)
         {
-            User newUser = new User {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                Gender = user.Gender,
-                Active = user.Active
-            };
+            User newUser = _mapper.Map<User>(user);
 
             _dataContextEF.Add(newUser);
             _dataContextEF.SaveChanges();

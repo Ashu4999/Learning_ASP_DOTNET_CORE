@@ -57,7 +57,7 @@ namespace Learning_Dotnet.Controllers
         {
             User newUser = _mapper.Map<User>(user);
 
-            _dataContextEF.Add(newUser);
+            _dataContextEF.Users.Add(newUser);
             _dataContextEF.SaveChanges();
             return Ok(newUser);
         }

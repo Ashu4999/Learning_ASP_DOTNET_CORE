@@ -37,8 +37,8 @@ namespace Learning_Dotnet.Controllers
         public IActionResult GetUserJobInfo([FromRoute] int userId)
         {
             string sql = $"SELECT * FROM TutorialAppSchema.UserJobInfo WHERE UserId = {userId}";
-            UserJobInfo foundUser = _dataContextDapper.LoadDataSingle<UserJobInfo>(sql);
-            return Ok(foundUser);
+            UserJobInfo foundUserJobInfo = _dataContextDapper.LoadDataSingle<UserJobInfo>(sql);
+            return Ok(foundUserJobInfo);
         }
 
         [HttpPost]
@@ -75,7 +75,7 @@ namespace Learning_Dotnet.Controllers
             {
                 return Ok();
             }
-            throw new Exception("Failed to edit user");
+            throw new Exception("Failed to edit userJobInfo");
         }
 
 
@@ -88,7 +88,7 @@ namespace Learning_Dotnet.Controllers
             {
                 return Ok();
             }
-            throw new Exception("Failed to delete user");
+            throw new Exception("Failed to delete userJobInfo");
         }
     }
 }

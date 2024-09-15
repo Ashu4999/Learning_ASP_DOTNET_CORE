@@ -50,7 +50,7 @@ namespace Learning_Dotnet.Controllers
         [HttpPost]
         public IActionResult AddUserJobInfo(UserJobInfo userJobInfo)
         {
-            _dataContextEF.Add(userJobInfo);
+            _dataContextEF.UserJobInfo.Add(userJobInfo);
             _dataContextEF.SaveChanges();
             return Ok(userJobInfo);
         }
@@ -78,7 +78,7 @@ namespace Learning_Dotnet.Controllers
             if (foundUserJobInfo == null)
                 return NotFound();
 
-            _dataContextEF.Remove(foundUserJobInfo);
+            _dataContextEF.UserJobInfo.Remove(foundUserJobInfo);
             _dataContextEF.SaveChanges();
             return NoContent();
         }

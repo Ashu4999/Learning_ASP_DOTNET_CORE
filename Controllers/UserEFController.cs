@@ -23,6 +23,9 @@ namespace Learning_Dotnet.Controllers
             _dataContextEF = new DataContextEF(config);
             _mapper = new Mapper(new MapperConfiguration(cfg => {
                 cfg.CreateMap<UserAddDto, User>();
+                cfg.CreateMap<User, User>();
+                cfg.CreateMap<UserJobInfo, UserJobInfo>();
+                cfg.CreateMap<UserSalary, UserSalary>();
             }));
         }
 
@@ -70,11 +73,7 @@ namespace Learning_Dotnet.Controllers
             if (foundUser == null)
                 return NotFound();
 
-            foundUser.FirstName = user.FirstName;
-            foundUser.LastName = user.LastName;
-            foundUser.Email = user.Email;
-            foundUser.Gender = user.Gender;
-            foundUser.Active = user.Active;
+            _mapper.Map(user, foundUser);
 
             _dataContextEF.SaveChanges();
             return Ok(foundUser);
@@ -134,8 +133,9 @@ namespace Learning_Dotnet.Controllers
             if (foundUserJobInfo == null)
                 return NotFound();
 
-            foundUserJobInfo.JobTitle = userJobInfo.JobTitle;
-            foundUserJobInfo.Department = userJobInfo.Department;
+            // foundUserJobInfo.JobTitle = userJobInfo.JobTitle;
+            // foundUserJobInfo.Department = userJobInfo.Department;
+            _mapper.Map(userJobInfo, foundUserJobInfo);
             _dataContextEF.SaveChanges();
             return Ok(foundUserJobInfo);
         }
@@ -195,7 +195,8 @@ namespace Learning_Dotnet.Controllers
             if (foundUserSalary == null)
                 return NotFound();
 
-            foundUserSalary.Salary = userSalary.Salary;
+            // foundUserSalary.Salary = userSalary.Salary;
+            _mapper.Map(userSalary, foundUserSalary);
 
             _dataContextEF.SaveChanges();
             return Ok(foundUserSalary);

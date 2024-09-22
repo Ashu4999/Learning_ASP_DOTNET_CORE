@@ -136,14 +136,14 @@ namespace Learning_Dotnet.Repositories
 
         public IEnumerable<UserSalary> GetUsersSalaries(int pageNo, int pageSize)
         {
-            Console.WriteLine($"{pageNo} {pageSize}");
             IQueryable<UserSalary> userSalaryQuery = _dataContextEF.UserSalary;
 
-            // if (pageNo > 0 && pageSize > 0)
-            // {
-            //     int skip = (pageNo - 1) * pageSize;
-            //     userSalaryQuery = userSalaryQuery.Skip(skip).Take(pageSize);
-            // }
+            if (pageNo > 0 && pageSize > 0)
+            {
+                int skip = (pageNo - 1) * pageSize;
+                userSalaryQuery = userSalaryQuery.Skip(skip).Take(pageSize);
+            }
+
             IEnumerable<UserSalary> userSalaries = userSalaryQuery.ToList();
             return userSalaries;
         }

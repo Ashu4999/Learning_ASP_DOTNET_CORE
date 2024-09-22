@@ -1,5 +1,3 @@
-using AutoMapper;
-using Learning_Dotnet.Data;
 using Learning_Dotnet.Dtos;
 using Learning_Dotnet.Interfaces;
 using Learning_Dotnet.Models;
@@ -90,6 +88,13 @@ namespace Learning_Dotnet.Controllers
         [HttpPost("UserJobInfo")]
         public IActionResult AddUserJobInfo(UserJobInfo userJobInfo)
         {
+            User? foundUser = _userRepository.GetUser(userJobInfo.UserId);
+
+            if (foundUser == null)
+            {
+                return NotFound("User not found");
+            }
+
             UserJobInfo? foundUserJobInfo = _userRepository.GetUserJobInfo(userJobInfo.UserId);
 
             if (foundUserJobInfo != null)
@@ -144,13 +149,20 @@ namespace Learning_Dotnet.Controllers
         [HttpPost("UserSalary")]
         public IActionResult AddUserSalary(UserSalary userSalary)
         {
+            User? foundUser = _userRepository.GetUser(userSalary.UserId);
+
+            if (foundUser == null)
+            {
+                return NotFound("User not found");
+            }
+
             UserSalary? foundUserSalary = _userRepository.GetUserSalary(userSalary.UserId);
 
             if (foundUserSalary != null)
             {
                 return Conflict();
             }
-            
+
             UserSalary newUserSalary = _userRepository.CreateUserSalary(userSalary);
             return Ok(newUserSalary);
         }

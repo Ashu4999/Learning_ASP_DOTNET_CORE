@@ -1,13 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using Learning_Dotnet.Data;
 using Learning_Dotnet.Dtos;
+using Learning_Dotnet.Interfaces;
 using Learning_Dotnet.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Learning_Dotnet.Controllers
@@ -16,38 +11,22 @@ namespace Learning_Dotnet.Controllers
     [Route("[controller]")]
     public class UserEFController : ControllerBase
     {
-        private readonly DataContextEF _dataContextEF;
-        IMapper _mapper;
-        public UserEFController(IConfiguration config)
+        private readonly IUserRepository _userRepository;
+        public UserEFController(IConfiguration config, IUserRepository userRepository)
         {
-            _dataContextEF = new DataContextEF(config);
-            _mapper = new Mapper(new MapperConfiguration(cfg => {
-                cfg.CreateMap<UserAddDto, User>();
-                cfg.CreateMap<User, User>();
-                cfg.CreateMap<UserJobInfo, UserJobInfo>();
-                cfg.CreateMap<UserSalary, UserSalary>();
-            }));
+            _userRepository = userRepository;
         }
 
         [HttpGet]
         public IEnumerable<User> GetUsers([FromQuery] int pageNo, [FromQuery] int pageSize)
         {
-            IQueryable<User> userQuery = _dataContextEF.Users;
-
-            if (pageNo != null && pageSize != null && pageNo > 0 && pageSize > 0)
-            {
-                int skip = (pageNo - 1) * pageSize;
-                userQuery = userQuery.Skip(skip).Take(pageSize);
-            }
-
-            IEnumerable<User> users = userQuery.ToList();
-            return users;
+            return _userRepository.GetUsers(pageNo, pageSize);
         }
 
         [HttpGet("{userId}")]
         public IActionResult GetUser([FromRoute] int userId)
         {
-            User? foundUser = _dataContextEF.Users.Where(u => u.UserId == userId).FirstOrDefault();
+            User? foundUser = _userRepository.GetUser(userId);
 
             if (foundUser == null)
                 return NotFound();
@@ -58,58 +37,49 @@ namespace Learning_Dotnet.Controllers
         [HttpPost]
         public IActionResult AddUser(UserAddDto user)
         {
-            User newUser = _mapper.Map<User>(user);
+            User? foundUser = _userRepository.GetUserByEmail(user.Email);
 
-            _dataContextEF.Users.Add(newUser);
-            _dataContextEF.SaveChanges();
+            if (foundUser != null)
+            {
+                return Conflict();
+            }
+
+            User newUser = _userRepository.CreateUser(user);
             return Ok(newUser);
         }
 
-        [HttpPut]
-        public IActionResult EditUser(User user)
+        [HttpPut("{userId}")]
+        public IActionResult EditUser([FromRoute] int userId, [FromBody] User user)
         {
-            User? foundUser = _dataContextEF.Users.Where(u => u.UserId == user.UserId).FirstOrDefault();
+            User? foundUser = _userRepository.UpdateUser(userId, user);
 
             if (foundUser == null)
                 return NotFound();
 
-            _mapper.Map(user, foundUser);
-
-            _dataContextEF.SaveChanges();
             return Ok(foundUser);
         }
 
         [HttpDelete("{userId}")]
         public IActionResult DeleteUser([FromRoute] int userId)
         {
-            User? foundUser = _dataContextEF.Users.Where(u => u.UserId == userId).FirstOrDefault();
+            User? foundUser = _userRepository.DeleteUser(userId);
 
             if (foundUser == null)
                 return NotFound();
 
-            _dataContextEF.Users.Remove(foundUser);
-            _dataContextEF.SaveChanges();
             return NoContent();
         }
 
         [HttpGet("UserJobInfo")]
-        public IEnumerable<UserJobInfo> GetUserJobInfo([FromQuery] int pageNo, [FromQuery] int pageSize)
+        public IEnumerable<UserJobInfo> GetUserJobInfos([FromQuery] int pageNo, [FromQuery] int pageSize)
         {
-            IQueryable<UserJobInfo> userJobInfoQuery = _dataContextEF.UserJobInfo;
-
-            if (pageNo > 0 && pageSize > 0)
-            {
-                int skip = (pageNo - 1) * pageSize;
-                userJobInfoQuery = userJobInfoQuery.Skip(skip).Take(pageSize);
-            }
-            IEnumerable<UserJobInfo> userJobInfos = userJobInfoQuery.ToList();
-            return userJobInfos;
+            return _userRepository.GetUserJobInfos(pageNo, pageSize);
         }
 
         [HttpGet("UserJobInfo/{userId}")]
         public IActionResult GetUserJobInfo([FromRoute] int userId)
         {
-            UserJobInfo? foundUserJobInfo = _dataContextEF.UserJobInfo.Where(u => u.UserId == userId).FirstOrDefault();
+            UserJobInfo? foundUserJobInfo = _userRepository.GetUserJobInfo(userId);
 
             if (foundUserJobInfo == null)
                 return NotFound();
@@ -120,23 +90,25 @@ namespace Learning_Dotnet.Controllers
         [HttpPost("UserJobInfo")]
         public IActionResult AddUserJobInfo(UserJobInfo userJobInfo)
         {
-            _dataContextEF.UserJobInfo.Add(userJobInfo);
-            _dataContextEF.SaveChanges();
-            return Ok(userJobInfo);
+            UserJobInfo? foundUserJobInfo = _userRepository.GetUserJobInfo(userJobInfo.UserId);
+
+            if (foundUserJobInfo != null)
+            {
+                return Conflict();
+            }
+
+            UserJobInfo newUserJobInfo = _userRepository.CreateUserJobInfo(userJobInfo);
+            return Ok(newUserJobInfo);
         }
 
-        [HttpPut("UserJobInfo")]
-        public IActionResult EditUserJobInfo(UserJobInfo userJobInfo)
+        [HttpPut("UserJobInfo/{userId}")]
+        public IActionResult EditUserJobInfo([FromRoute] int userId, [FromBody] UserJobInfo userJobInfo)
         {
-            UserJobInfo? foundUserJobInfo = _dataContextEF.UserJobInfo.Where(u => u.UserId == userJobInfo.UserId).FirstOrDefault();
+            UserJobInfo? foundUserJobInfo = _userRepository.UpdateUserJobInfo(userId, userJobInfo);
 
             if (foundUserJobInfo == null)
                 return NotFound();
 
-            // foundUserJobInfo.JobTitle = userJobInfo.JobTitle;
-            // foundUserJobInfo.Department = userJobInfo.Department;
-            _mapper.Map(userJobInfo, foundUserJobInfo);
-            _dataContextEF.SaveChanges();
             return Ok(foundUserJobInfo);
         }
 
@@ -144,34 +116,24 @@ namespace Learning_Dotnet.Controllers
         [HttpDelete("UserJobInfo/{userId}")]
         public IActionResult DeleteUserJobInfo([FromRoute] int userId)
         {
-            UserJobInfo? foundUserJobInfo = _dataContextEF.UserJobInfo.Where(u => u.UserId == userId).FirstOrDefault();
+            UserJobInfo? foundUserJobInfo = _userRepository.DeleteUserJobInfo(userId);
 
             if (foundUserJobInfo == null)
                 return NotFound();
 
-            _dataContextEF.UserJobInfo.Remove(foundUserJobInfo);
-            _dataContextEF.SaveChanges();
             return NoContent();
         }
 
         [HttpGet("UserSalary")]
         public IEnumerable<UserSalary> GetUserSalaries([FromQuery] int pageNo, [FromQuery] int pageSize)
         {
-            IQueryable<UserSalary> userSalaryQuery = _dataContextEF.UserSalary;
-
-            if (pageNo > 0 && pageSize > 0)
-            {
-                int skip = (pageNo - 1) * pageSize;
-                userSalaryQuery = userSalaryQuery.Skip(skip).Take(pageSize);
-            }
-            IEnumerable<UserSalary> userSalaries = userSalaryQuery.ToList();
-            return userSalaries;
+            return _userRepository.GetUsersSalaries(pageNo, pageSize);
         }
 
         [HttpGet("UserSalary/{userId}")]
         public IActionResult GetUserSalary([FromRoute] int userId)
         {
-            UserSalary? foundUserSalary = _dataContextEF.UserSalary.Where(u => u.UserId == userId).FirstOrDefault();
+            UserSalary? foundUserSalary = _userRepository.GetUserSalary(userId);
 
             if (foundUserSalary == null)
                 return NotFound();
@@ -182,36 +144,36 @@ namespace Learning_Dotnet.Controllers
         [HttpPost("UserSalary")]
         public IActionResult AddUserSalary(UserSalary userSalary)
         {
-            _dataContextEF.UserSalary.Add(userSalary);
-            _dataContextEF.SaveChanges();
-            return Ok(userSalary);
+            UserSalary? foundUserSalary = _userRepository.GetUserSalary(userSalary.UserId);
+
+            if (foundUserSalary != null)
+            {
+                return Conflict();
+            }
+            
+            UserSalary newUserSalary = _userRepository.CreateUserSalary(userSalary);
+            return Ok(newUserSalary);
         }
 
-        [HttpPut("UserSalary")]
-        public IActionResult EditUserSalary(UserSalary userSalary)
+        [HttpPut("UserSalary/{userId}")]
+        public IActionResult EditUserSalary([FromRoute] int userId, [FromBody] UserSalary userSalary)
         {
-            UserSalary? foundUserSalary = _dataContextEF.UserSalary.Where(u => u.UserId == userSalary.UserId).FirstOrDefault();
+            UserSalary? foundUserSalary = _userRepository.UpdateUserSalary(userId, userSalary);
 
             if (foundUserSalary == null)
                 return NotFound();
 
-            // foundUserSalary.Salary = userSalary.Salary;
-            _mapper.Map(userSalary, foundUserSalary);
-
-            _dataContextEF.SaveChanges();
             return Ok(foundUserSalary);
         }
 
         [HttpDelete("UserSalary/{userId}")]
         public IActionResult DeleteUserSalary([FromRoute] int userId)
         {
-            UserSalary? foundUserSalary = _dataContextEF.UserSalary.Where(u => u.UserId == userId).FirstOrDefault();
+            UserSalary? foundUserSalary = _userRepository.DeleteUserSalary(userId);
 
             if (foundUserSalary == null)
                 return NotFound();
 
-            _dataContextEF.UserSalary.Remove(foundUserSalary);
-            _dataContextEF.SaveChanges();
             return NoContent();
         }
     }
